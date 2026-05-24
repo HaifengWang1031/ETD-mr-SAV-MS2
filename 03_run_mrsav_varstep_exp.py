@@ -253,10 +253,10 @@ def run_experiment(
             1e-2,
             snapshot=np.linspace(0, t_period[1], 201),
             compute_ref_err=True,
-            rho=0.9,
-            rtol=rtol,
-            rtol_q=rtol_q,
-            r=1 / 2,
+            rho   = 0.9,
+            rtol  = rtol,
+            rtol_q= rtol_q,
+            r     = 1/2,
             ref_substeps = 2
         )
         all_adaptive_results.append(
