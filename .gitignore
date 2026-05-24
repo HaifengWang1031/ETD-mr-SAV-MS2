@@ -1,0 +1,43 @@
+# macOS / editor noise
+.DS_Store
+.vscode/
+.claude/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Experiment outputs
+data/
+fig/
+logs/
+
+# Keep output directories if explicit placeholders are added later
+!data/.gitkeep
+!fig/.gitkeep
+!logs/.gitkeep
+
+# Common numerical / plotting artifacts outside output directories
+*.h5
+*.hdf5
+*.npz
+*.npy
+*.mat
+*.png
+*.pdf
+
+# Runtime logs and process markers
+*.log
+*.pid
+*.exit
+nohup.out
