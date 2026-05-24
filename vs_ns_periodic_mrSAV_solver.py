@@ -628,6 +628,7 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solver():
 
         # 主时间循环
         index = self.setup_step
+        prev_fN_n = None
         while self.tn[index-1] < self.T:
             if index >= len(self.tn) - 10:
                 self.extend_array()
@@ -637,8 +638,7 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solver():
 
             start_time = perf_counter()  # 包含 N 预计算和所有被拒绝步的计算时间，与 solve_fix_step 计时口径一致
             # 预计算 N(omega_n) 和 N(omega_nm) 的傅里叶变换，避免步长被拒绝时重复计算
-            fN_nm = self.ft(self.N(omega_hist[-2]))
-            start_time = perf_counter()  # 包含 N 预计算和所有被拒绝步的计算时间，与 solve_fix_step 计时口径一致
+            fN_nm = self.ft(self.N(omega_hist[-2])) if prev_fN_n is None else prev_fN_n
             fN_n  = self.ft(self.N(omega_hist[-1]))
             while True:
                 Omega_2, Omega_1, q_2, A_n, B_n = self.ETD_mrGSAV_MS12_b(
@@ -647,18 +647,12 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solver():
                     self.tn[index-1],
                     self.tau[index-self.setup_step:index],
                     fN_n=fN_n,
-                    fN_nm = fN_nm,
+                    fN_nm=fN_nm,
                 )
 
                 # 计算误差
                 Error_u = np.sqrt(self.inner_product(Omega_2 - Omega_1, Omega_2 - Omega_1)/self.inner_product(Omega_2, Omega_2)) + 1e-16
                 Error_q = np.abs(q_2 - 1) + 1e-16
-
-                if snapshot_mode and compute_ref_err:
-                    diff_b  = self.N(Omega_2) - self.N(Omega_1)
-                    Error_b = np.sqrt(self.inner_product(diff_b, diff_b)/self.inner_product(self.N(Omega_2), self.N(Omega_2)))
-                else:
-                    Error_b = 0.0
 
                 # 计算新的时间步长
                 tau = self.rho * min( (self.rtol / Error_u) ** (self.r) , self.rtol_q / Error_q) * self.tau[index-1]
@@ -670,14 +664,6 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solver():
                         self.Omega_temp[-1] = Omega_2
                     else:
                         self.Omega[index] = Omega_2
-                    self.q[index]         = q_2
-                    self.tau[index]       = tau
-                    self.tn[index]        = self.tn[index-1] + self.tau[index-1]
-                    self.rel_err[index]   = Error_u
-                    self.ref_err_p[index] = Error_q
-                    self.ref_err_b[index] = Error_b
-                    self.A_n[index]       = A_n
-                    self.B_n[index]       = B_n
                     break
                 else:
                     self.tau[index-1] = tau
@@ -685,6 +671,21 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solver():
             end_time = perf_counter()
             cpu_time = end_time - start_time
             self.cpu_time[index] = self.cpu_time[index-1] + cpu_time
+
+            self.q[index]         = q_2
+            self.tau[index]       = tau
+            self.tn[index]        = self.tn[index-1] + self.tau[index-1]
+            self.rel_err[index]   = Error_u
+            self.ref_err_p[index] = Error_q
+            self.A_n[index]       = A_n
+            self.B_n[index]       = B_n
+
+            if snapshot_mode and compute_ref_err:
+                diff_b  = self.N(Omega_2) - self.N(Omega_1)
+                Error_b = np.sqrt(self.inner_product(diff_b, diff_b)/self.inner_product(self.N(Omega_2), self.N(Omega_2)))
+            else:
+                Error_b = 0.0
+            self.ref_err_b[index] = Error_b
 
             if compute_ref_err:
                 ref_tau = self.tau[index-1] / ref_substeps
@@ -717,6 +718,7 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solver():
                 self.Omega_temp[:-1] = self.Omega_temp[1:]
             self.Omega_temp_2[:-1] = self.Omega_temp_2[1:]
 
+            prev_fN_n = fN_n
             index += 1
 
         print("")
