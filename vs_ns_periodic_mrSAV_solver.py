@@ -800,7 +800,7 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solver():
             self.Omega[0] = self.Omega0
         save_snapshot(0, self.Omega0)
 
-        # 使用 ETD 启动多步法。
+        # 使用 ETDRK4 启动多步法。
         for i in range(1, self.setup_step):
             omega_prev = self.Omega_temp[i-1:i] if snapshot_mode else self.Omega[i-1:i]
             omega_new, self.q[i] = self.ETDRK4(
@@ -822,8 +822,8 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solver():
         self._fN_cache = None
         if getattr(self.step, "__name__", "") == "ETDRK4":
             self._prepare_ETDRK4_coefficients(tau)
-        for index in range(self.setup_step, M + 1):
 
+        for index in range(self.setup_step, M + 1):
             start_time = perf_counter()
             omega_hist = self.Omega_temp[:-1] if snapshot_mode else self.Omega[index-self.setup_step:index]
             omega_new, self.q[index] = self.step(
