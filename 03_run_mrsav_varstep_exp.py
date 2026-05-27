@@ -54,27 +54,27 @@ def tol_key(rtol, rtol_q):
 
 def default_tolerance_lists():
     tol_grid_list = [
-        (5e-4, 5e-4),
-        (5e-4, 1e-4),
-        (5e-4, 1e-3),
-        (1e-4, 1e-4),
-        (1e-4, 5e-4),
-        (1e-4, 1e-3),
-        (1e-3, 1e-4),
-        (1e-3, 5e-4),
-        (1e-3, 1e-3),
+        (5.5e-4, 5.5e-4),
+        # (5e-4, 1e-4),
+        # (5e-4, 1e-3),
+        # (1e-4, 1e-4),
+        # (1e-4, 5e-4),
+        # (1e-4, 1e-3),
+        # (1e-3, 1e-4),
+        # (1e-3, 5e-4),
+        # (1e-3, 1e-3),
     ]
 
     tol_perturb_list = [
-        (5e-4*1.1, 5e-4*1.1),
-        (5e-4*1.1, 5e-4    ),
-        (5e-4*1.1, 5e-4*0.9),
-        (5e-4,     5e-4*1.1),
-        (5e-4,     5e-4    ),
-        (5e-4,     5e-4*0.9),
-        (5e-4*0.9, 5e-4*1.1),
-        (5e-4*0.9, 5e-4    ),
-        (5e-4*0.9, 5e-4*0.9),
+        (5.5e-4*1.1, 5.5e-4*1.1),
+        (5.5e-4*1.1, 5.5e-4    ),
+        (5.5e-4*1.1, 5.5e-4*0.9),
+        (5.5e-4,     5.5e-4*1.1),
+        (5.5e-4,     5.5e-4    ),
+        (5.5e-4,     5.5e-4*0.9),
+        (5.5e-4*0.9, 5.5e-4*1.1),
+        (5.5e-4*0.9, 5.5e-4    ),
+        (5.5e-4*0.9, 5.5e-4*0.9),
     ]
 
     # Keep one computed copy of the shared (1e-4, 1e-4) case.
@@ -86,7 +86,7 @@ def default_fixed_configs():
     return [
         {
             "key": "tau_0p0048",
-            "tau": 0.0048,
+            "tau": 0.004,
             "color": "C1",
             "marker": "*",
             "linestyle": "-.",
@@ -94,7 +94,7 @@ def default_fixed_configs():
         },
         {
             "key": "tau_0p0024",
-            "tau": 0.0024,
+            "tau": 0.002,
             "color": "C2",
             "marker": "d",
             "linestyle": "--",
@@ -102,7 +102,7 @@ def default_fixed_configs():
         },
         {
             "key": "tau_0p0012",
-            "tau": 0.0012,
+            "tau": 0.0015,
             "color": "C3",
             "marker": "p",
             "linestyle": "--",
@@ -198,7 +198,7 @@ def run_experiment(
     t_period = (0.0, 20.0)
     adaptive_cache_version = 2
     fixed_cache_version = 2
-    ref_tau = 0.0002
+    ref_tau = 0.00025
     force_term = make_force_term(m)
 
     tol_grid_list, tol_perturb_list, tol_list = default_tolerance_lists()
@@ -257,7 +257,7 @@ def run_experiment(
             rtol  = rtol,
             rtol_q= rtol_q,
             r     = 1/2,
-            ref_substeps = 2
+            ref_substeps = 4
         )
         all_adaptive_results.append(
             {

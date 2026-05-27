@@ -21,6 +21,7 @@ env/
 data/
 fig/
 logs/
+tables/
 
 # Keep output directories if explicit placeholders are added later
 !data/.gitkeep
