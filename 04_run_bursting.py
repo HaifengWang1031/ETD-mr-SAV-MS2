@@ -32,6 +32,8 @@ m = args.m
 M = args.M
 eps = args.eps
 ga = args.gamma
+re_tag = f"{Re:g}"
+eps_tag = f"{eps:g}"
 
 force_term = lambda X, Y, t: m * np.cos(m * Y)
 
@@ -87,9 +89,9 @@ etdms_solver = sav_vs_solver(nu, ga, s_domain, discrete_num, initial_vorticity, 
 
 # ---- output path ----
 if mode == "fix":
-    h5_path = f"./data/ns_{M}_bursting_{Re}_{m}_{eps}_{args.tau}.h5"
+    h5_path = f"./data/ns_{M}_bursting_{re_tag}_{m}_{eps_tag}_{args.tau:g}.h5"
 else:
-    h5_path = f"./data/ns_{M}_bursting_{Re}_{m}_{eps}_vs.h5"
+    h5_path = f"./data/ns_{M}_bursting_{re_tag}_{m}_{eps_tag}_vs.h5"
 
 # ---- main solve ----
 snapshots = np.linspace(t_period[0], t_period[1], int((t_period[1] - t_period[0]) * 10) + 1)
