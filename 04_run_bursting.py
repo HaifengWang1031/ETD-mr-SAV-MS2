@@ -16,13 +16,13 @@ parser.add_argument("--eps", type=float, default=3,              help="perturbat
 parser.add_argument("--gamma", type=float, default=1000)
 
 # fix mode
-parser.add_argument("--tau", type=float, default=0.001/2,  help="fixed time step size (fix mode)")
+parser.add_argument("--tau", type=float, default=0.001,  help="fixed time step size (fix mode)")
 
 # adaptive mode
 parser.add_argument("--tau-min", type=float, default=1e-5, help="min time step (adaptive mode)")
 parser.add_argument("--tau-max", type=float, default=1e-2, help="max time step (adaptive mode)")
-parser.add_argument("--rtol", type=float, default=5e-4,    help="relative tolerance (adaptive mode)")
-parser.add_argument("--rtol-q", type=float, default=5e-4,  help="relative tolerance for q (adaptive mode)")
+parser.add_argument("--rtol",    type=float, default=1e-4,    help="relative tolerance (adaptive mode)")
+parser.add_argument("--rtol-q",  type=float, default=1e-4,  help="relative tolerance for q (adaptive mode)")
 
 args = parser.parse_args()
 
@@ -67,7 +67,7 @@ def initial_streamfunction(x: np.ndarray, y: np.ndarray, nu: float, m: float, ep
     return phi
 
 s_domain = (0, 0, 2 * np.pi, 2 * np.pi)
-discrete_num = [128, 128]
+discrete_num = [64, 64]
 xn = np.linspace(s_domain[0], s_domain[2], discrete_num[0] + 1)
 yn = np.linspace(s_domain[1], s_domain[3], discrete_num[1] + 1)
 X, Y = np.meshgrid(xn, yn)
