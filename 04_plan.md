@@ -174,11 +174,11 @@ pyfftw.config.NUM_THREADS = _optimal_fftw_threads(max(discrete_num))
 正式运行前确认 `--M "IMEX"` 是服务器当前代码支持的方法名。当前计划命令如下：
 
 ```bash
-python 04_run_bursting.py --mode "fix" --tau 0.001
-python 04_run_bursting.py --mode "fix" --tau 0.0005
-python 04_run_bursting.py --mode "fix" --tau 0.001 --M "IMEX"
-python 04_run_bursting.py --mode "fix" --tau 0.0005 --M "IMEX"
-python 04_run_bursting.py --mode "adaptive"
+# python 04_run_bursting.py --mode "fix" --tau 0.001
+# python 04_run_bursting.py --mode "fix" --tau 0.0005
+python 04_run_bursting.py --mode "fix" --tau 0.001 --M "ETD"
+python 04_run_bursting.py --mode "fix" --tau 0.0005 --M "ETD"
+# python 04_run_bursting.py --mode "adaptive"
 ```
 
 对应预期输出：

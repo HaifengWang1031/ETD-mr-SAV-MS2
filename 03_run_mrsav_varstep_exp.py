@@ -85,36 +85,24 @@ def default_tolerance_lists():
 def default_fixed_configs():
     return [
         {
-            "key": "tau_0p0048",
+            "key": "tau_0p004",
             "tau": 0.004,
-            "color": "C1",
-            "marker": "*",
-            "linestyle": "-.",
-            "markevery": 400,
         },
         {
-            "key": "tau_0p0024",
+            "key": "tau_0p002",
             "tau": 0.002,
-            "color": "C2",
-            "marker": "d",
-            "linestyle": "--",
-            "markevery": 800,
         },
         {
-            "key": "tau_0p0012",
+            "key": "tau_0p0015",
             "tau": 0.0015,
-            "color": "C3",
-            "marker": "p",
-            "linestyle": "--",
-            "markevery": 800,
         },
         {
             "key": "tau_0p001",
             "tau": 0.001,
-            "color": "C4",
-            "marker": "s",
-            "linestyle": ":",
-            "markevery": 800,
+        },
+        {
+            "key": "tau_0p0005",
+            "tau": 0.0005,
         },
     ]
 
@@ -197,7 +185,7 @@ def run_experiment(
     discrete_num = [128, 128]
     t_period = (0.0, 20.0)
     adaptive_cache_version = 2
-    fixed_cache_version = 2
+    fixed_cache_version = 3
     ref_tau = 0.00025
     force_term = make_force_term(m)
 
@@ -395,10 +383,6 @@ def run_experiment(
             {
                 f"fixed_{i}_key": np.array(res["key"]),
                 f"fixed_{i}_tau": np.array(res["tau"]),
-                f"fixed_{i}_color": np.array(res["color"]),
-                f"fixed_{i}_marker": np.array(res["marker"]),
-                f"fixed_{i}_linestyle": np.array(res["linestyle"]),
-                f"fixed_{i}_markevery": np.array(res["markevery"]),
                 f"fixed_{i}_tn": res["tn"],
                 f"fixed_{i}_tau_values": res["tau_values"],
                 f"fixed_{i}_q": res["q"],

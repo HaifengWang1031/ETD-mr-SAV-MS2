@@ -13,7 +13,7 @@ from vs_ns_periodic_mrSAV_solver import (
 
 DEFAULT_OUTPUT = Path("data/test_bursting_diagnostics.h5")
 DEFAULT_LOG = Path("logs/run_test_diagnostics.log")
-DIAGNOSTIC_KEYS = ("q", "Energy", "Enstrophy", "Palinstrophy", "Mx", "CPU_time")
+DIAGNOSTIC_KEYS = ("q", "Energy", "Enstrophy", "Enstrophy_rate", "Palinstrophy", "Mx", "CPU_time")
 ERROR_KEYS = (
     "l2_error_gamma_1000",
     "l2_error_gamma_0",
@@ -123,6 +123,7 @@ def record_diagnostics(
     solver,
     omega: np.ndarray,
     q: float,
+    t: float,
     cpu_time: float,
     diagnostics: dict[str, np.ndarray],
     index: int,
@@ -131,6 +132,7 @@ def record_diagnostics(
     diagnostics["q"][index] = q
     diagnostics["Energy"][index] = energy
     diagnostics["Enstrophy"][index] = enstrophy
+    diagnostics["Enstrophy_rate"][index] = solver.enstrophy_rate(omega, t)
     diagnostics["Palinstrophy"][index] = palinstrophy
     diagnostics["Mx"][index] = np.max(omega)
     diagnostics["CPU_time"][index] = cpu_time
@@ -273,7 +275,7 @@ def run_diagnostics(
     tau_ref: float = 0.0005,
     Re: float = 40.0,
     m: int = 4,
-    eps: float = 2.5,
+    eps: float = 0.25,
     gamma: float = 1000.0,
     discrete_num: tuple[int, int] = (128, 128),
     s_domain: tuple[float, float, float, float] = (0.0, 0.0, 2 * np.pi, 2 * np.pi),
@@ -359,9 +361,9 @@ def run_diagnostics(
     omega_gamma = gamma_state["omega_hist"][-1]
     omega_gamma0 = gamma0_state["omega_hist"][-1]
     omega_ref = ref_state["omega_hist"][-1]
-    record_diagnostics(gamma_solver, omega_gamma, gamma_solver.q0, 0.0, gamma_data, 0)
-    record_diagnostics(gamma0_solver, omega_gamma0, gamma0_solver.q0, 0.0, gamma0_data, 0)
-    record_diagnostics(ref_solver, omega_ref, ref_solver.q0, 0.0, ref_data, 0)
+    record_diagnostics(gamma_solver, omega_gamma, gamma_solver.q0, t[0], 0.0, gamma_data, 0)
+    record_diagnostics(gamma0_solver, omega_gamma0, gamma0_solver.q0, t[0], 0.0, gamma0_data, 0)
+    record_diagnostics(ref_solver, omega_ref, ref_solver.q0, t[0], 0.0, ref_data, 0)
 
     scale = gamma_solver.hx * gamma_solver.hy
     progress_every = max(1, int(progress_every))
@@ -416,6 +418,7 @@ def run_diagnostics(
                     gamma_solver,
                     omega_gamma,
                     q_gamma,
+                    t[step],
                     gamma_state["cpu_time"],
                     gamma_data,
                     step,
@@ -424,6 +427,7 @@ def run_diagnostics(
                     gamma0_solver,
                     omega_gamma0,
                     q_gamma0,
+                    t[step],
                     gamma0_state["cpu_time"],
                     gamma0_data,
                     step,
@@ -432,6 +436,7 @@ def run_diagnostics(
                     ref_solver,
                     omega_ref,
                     q_ref,
+                    t[step],
                     ref_state["cpu_time"],
                     ref_data,
                     step,
