@@ -94,7 +94,15 @@ else:
     h5_path = f"./data/ns_{M}_bursting_{re_tag}_{m}_{eps_tag}_vs.h5"
 
 # ---- main solve ----
-snapshots = np.linspace(t_period[0], t_period[1], int((t_period[1] - t_period[0]) * 10) + 1)
+if mode == "fix":
+    total_steps = int(round((t_period[1] - t_period[0]) / args.tau))
+    snapshot_stride = max(1, int(round(0.1 / args.tau)))
+    snapshot_indices = np.arange(0, total_steps + 1, snapshot_stride, dtype=np.int64)
+    if snapshot_indices[-1] != total_steps:
+        snapshot_indices = np.append(snapshot_indices, total_steps)
+    snapshots = t_period[0] + args.tau * snapshot_indices
+else:
+    snapshots = np.linspace(t_period[0], t_period[1], int((t_period[1] - t_period[0]) * 10) + 1)
 
 print(f"\n=== Running {mode} solve: t={t_period} ===")
 

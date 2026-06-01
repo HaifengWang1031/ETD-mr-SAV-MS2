@@ -6,12 +6,17 @@ _在服务器上运行 `04_run_bursting.py` 的准备、执行、监控和数据
 
 ## 目标
 
-本轮服务器计算用于生成 bursting regime 的长时间稳定性数据，并比较以下五组模拟：
+本轮服务器计算用于生成 bursting regime 的长时间稳定性数据，并比较以下十组模拟：
 
 - mrSAV 固定步长，`tau = 0.001`
 - mrSAV 固定步长，`tau = 0.0005`
 - IMEX 固定步长，`tau = 0.001`
 - IMEX 固定步长，`tau = 0.0005`
+- ETD 固定步长，`tau = 0.001`
+- ETD 固定步长，`tau = 0.0005`
+- ETD 固定步长，`tau = 0.0001`
+- IMEX 固定步长，`tau = 0.0001`
+- mrSAV 固定步长，`tau = 0.0001`
 - mrSAV 自适应步长
 
 主要输出为 `data/*.h5` 文件，后续在本地 notebook 中进行统计分析、图表生成和论文表格更新。
@@ -41,7 +46,7 @@ flowchart TB
     validate_env -->|No| fix_env[Fix missing packages or system libraries]
     fix_env --> validate_env
     validate_env -->|Yes| tune_fftw[Benchmark FFTW thread count]
-    tune_fftw --> confirm_commands[Confirm five run commands]
+    tune_fftw --> confirm_commands[Confirm run commands]
     confirm_commands --> launch_tmux[Launch tmux sessions]
     launch_tmux --> monitor_runs[Monitor logs and resources]
     monitor_runs --> check_outputs{All h5 files valid?}
@@ -114,7 +119,7 @@ python 04_run_bursting.py --help
 - `04_run_bursting.py` 的默认参数符合本轮实验：`Re = 40`、`m = 4`、`eps = 3`、`gamma = 1000`
 - 固定步长输出路径格式为 `data/ns_{M}_bursting_{Re}_{m}_{eps}_{tau}.h5`
 - 自适应步长输出路径格式为 `data/ns_{M}_bursting_{Re}_{m}_{eps}_vs.h5`
-- `vs_ns_periodic_mrSAV_solver.py` 支持 `M = "IMEX"` 和 `M = "ETD_mrGSAV_MS2_b"`
+- `vs_ns_periodic_mrSAV_solver.py` 支持 `M = "IMEX"`、`M = "ETD"` 和 `M = "ETD_mrGSAV_MS2_b"`
 - `data/` 和 `logs/` 目录存在
 
 建议先创建输出目录：
@@ -169,16 +174,21 @@ pyfftw.config.NUM_THREADS = _optimal_fftw_threads(max(discrete_num))
 是否需要修改 vs_ns_periodic_mrSAV_solver.py: TODO
 ```
 
-## 5. 确认五组模拟命令
+## 5. 确认模拟命令
 
-正式运行前确认 `--M "IMEX"` 是服务器当前代码支持的方法名。当前计划命令如下：
+正式运行前确认 `--M "IMEX"` 和 `--M "ETD"` 是服务器当前代码支持的方法名。当前计划命令如下：
 
 ```bash
-# python 04_run_bursting.py --mode "fix" --tau 0.001
-# python 04_run_bursting.py --mode "fix" --tau 0.0005
+python 04_run_bursting.py --mode "fix" --tau 0.001
+python 04_run_bursting.py --mode "fix" --tau 0.0005
+python 04_run_bursting.py --mode "fix" --tau 0.001 --M "IMEX"
+python 04_run_bursting.py --mode "fix" --tau 0.0005 --M "IMEX"
 python 04_run_bursting.py --mode "fix" --tau 0.001 --M "ETD"
 python 04_run_bursting.py --mode "fix" --tau 0.0005 --M "ETD"
-# python 04_run_bursting.py --mode "adaptive"
+python 04_run_bursting.py --mode "fix" --tau 0.0001 --M "ETD"
+python 04_run_bursting.py --mode "fix" --tau 0.0001 --M "IMEX"
+python 04_run_bursting.py --mode "fix" --tau 0.0001
+python 04_run_bursting.py --mode "adaptive"
 ```
 
 对应预期输出：
@@ -189,6 +199,11 @@ python 04_run_bursting.py --mode "fix" --tau 0.0005 --M "ETD"
 | mrSAV fixed `tau = 0.0005` | `data/ns_ETD_mrGSAV_MS2_b_bursting_40_4_3_0.0005.h5` |
 | IMEX fixed `tau = 0.001` | `data/ns_IMEX_bursting_40_4_3_0.001.h5` |
 | IMEX fixed `tau = 0.0005` | `data/ns_IMEX_bursting_40_4_3_0.0005.h5` |
+| ETD fixed `tau = 0.001` | `data/ns_ETD_bursting_40_4_3_0.001.h5` |
+| ETD fixed `tau = 0.0005` | `data/ns_ETD_bursting_40_4_3_0.0005.h5` |
+| ETD fixed `tau = 0.0001` | `data/ns_ETD_bursting_40_4_3_0.0001.h5` |
+| IMEX fixed `tau = 0.0001` | `data/ns_IMEX_bursting_40_4_3_0.0001.h5` |
+| mrSAV fixed `tau = 0.0001` | `data/ns_ETD_mrGSAV_MS2_b_bursting_40_4_3_0.0001.h5` |
 | mrSAV adaptive | `data/ns_ETD_mrGSAV_MS2_b_bursting_40_4_3_vs.h5` |
 
 ## 6. 使用 tmux 并行运行
@@ -220,10 +235,42 @@ python 04_run_bursting.py --mode "fix" --tau 0.0005 --M "IMEX" 2>&1 | tee logs/b
 ```
 
 ```bash
+tmux new -s burst_etd_1e3
+conda activate etd-mrsav-ms2
+python 04_run_bursting.py --mode "fix" --tau 0.001 --M "ETD" 2>&1 | tee logs/burst_etd_1e3.log
+```
+
+```bash
+tmux new -s burst_etd_5e4
+conda activate etd-mrsav-ms2
+python 04_run_bursting.py --mode "fix" --tau 0.0005 --M "ETD" 2>&1 | tee logs/burst_etd_5e4.log
+```
+
+```bash
+tmux new -s burst_etd_1e4
+conda activate etd-mrsav-ms2
+python 04_run_bursting.py --mode "fix" --tau 0.0001 --M "ETD" 2>&1 | tee logs/burst_etd_1e4.log
+```
+
+```bash
+tmux new -s burst_imex_1e4
+conda activate etd-mrsav-ms2
+python 04_run_bursting.py --mode "fix" --tau 0.0001 --M "IMEX" 2>&1 | tee logs/burst_imex_1e4.log
+```
+
+```bash
+tmux new -s burst_fix_1e4
+conda activate etd-mrsav-ms2
+python 04_run_bursting.py --mode "fix" --tau 0.0001 2>&1 | tee logs/burst_fix_1e4.log
+```
+
+```bash
 tmux new -s burst_adaptive
 conda activate etd-mrsav-ms2
 python 04_run_bursting.py --mode "adaptive" 2>&1 | tee logs/burst_adaptive.log
 ```
+
+`tau = 0.0001` 的任务步数为 `1e8`，日志如果逐步写入会非常大。正式服务器运行时可使用降采样日志包装器，只保留约每 60 秒一次的进度、起止信息和异常信息，避免 `logs/` 目录膨胀到数十 GB。
 
 常用 tmux 操作：
 
@@ -261,7 +308,7 @@ mv data/FAILED_FILE.h5 data/FAILED_FILE.failed.h5
 
 ## 8. 完成后检查输出完整性
 
-五个任务结束后，先检查文件是否存在：
+所有任务结束后，先检查文件是否存在：
 
 ```bash
 ls -lh data/*bursting_40_4_3*.h5
@@ -301,7 +348,7 @@ PY
 
 验收标准：
 
-- 五个 `.h5` 文件均存在
+- 十个 `.h5` 文件均存在
 - 每个文件都包含关键数据集
 - `tn` 最后时间应到达 `10000`
 - adaptive 文件额外包含 `tau`
@@ -309,17 +356,24 @@ PY
 
 ## 9. 数据回传到本地
 
-从本地机器执行 `rsync`，将服务器数据同步回来：
+服务器当前没有 `rsync` 时，从本地机器执行 `scp`，将新增结果同步回来：
 
 ```bash
-rsync -avP TODO@TODO:~/ETD-mr-SAV-MS2/data/*bursting_40_4_3*.h5 ./data/
-rsync -avP TODO@TODO:~/ETD-mr-SAV-MS2/logs/burst_*.log ./logs/
+scp -P 40193 -i ~/.ssh/id_rsa \
+  root@hpceias.eitech.edu.cn:'~/ETD-mr-SAV-MS2/data/ns_ETD_bursting_40_4_3_0.001.h5 ~/ETD-mr-SAV-MS2/data/ns_ETD_bursting_40_4_3_0.0005.h5 ~/ETD-mr-SAV-MS2/data/ns_ETD_bursting_40_4_3_0.0001.h5 ~/ETD-mr-SAV-MS2/data/ns_IMEX_bursting_40_4_3_0.0001.h5 ~/ETD-mr-SAV-MS2/data/ns_ETD_mrGSAV_MS2_b_bursting_40_4_3_0.0001.h5' \
+  ./data/
+
+scp -P 40193 -i ~/.ssh/id_rsa \
+  root@hpceias.eitech.edu.cn:'~/ETD-mr-SAV-MS2/logs/burst_etd_1e3.log ~/ETD-mr-SAV-MS2/logs/burst_etd_5e4.log ~/ETD-mr-SAV-MS2/logs/burst_etd_1e4.log ~/ETD-mr-SAV-MS2/logs/burst_imex_1e4.log ~/ETD-mr-SAV-MS2/logs/burst_fix_1e4.log' \
+  ./logs/
 ```
 
 如果只想先传结果数据：
 
 ```bash
-rsync -avP TODO@TODO:~/ETD-mr-SAV-MS2/data/*bursting_40_4_3*.h5 ./data/
+scp -P 40193 -i ~/.ssh/id_rsa \
+  root@hpceias.eitech.edu.cn:'~/ETD-mr-SAV-MS2/data/ns_ETD_bursting_40_4_3_0.001.h5 ~/ETD-mr-SAV-MS2/data/ns_ETD_bursting_40_4_3_0.0005.h5 ~/ETD-mr-SAV-MS2/data/ns_ETD_bursting_40_4_3_0.0001.h5 ~/ETD-mr-SAV-MS2/data/ns_IMEX_bursting_40_4_3_0.0001.h5 ~/ETD-mr-SAV-MS2/data/ns_ETD_mrGSAV_MS2_b_bursting_40_4_3_0.0001.h5' \
+  ./data/
 ```
 
 ## 10. 本地后续分析准备
@@ -341,9 +395,9 @@ rsync -avP TODO@TODO:~/ETD-mr-SAV-MS2/data/*bursting_40_4_3*.h5 ./data/
 - [ ] 创建 `data/` 和 `logs/` 目录
 - [ ] 测试 FFTW 线程数
 - [ ] 根据测试结果决定是否修改 `_optimal_fftw_threads`
-- [ ] 确认五组命令和输出文件名
-- [ ] 启动五个 tmux 会话
+- [ ] 确认十组命令和输出文件名
+- [ ] 启动十个 tmux 会话或按新增批次启动剩余任务
 - [ ] 监控日志、CPU、内存和磁盘
-- [ ] 检查五个 `.h5` 文件完整性
+- [ ] 检查十个 `.h5` 文件完整性
 - [ ] 将数据和日志回传本地
 - [ ] 本地 notebook 重新分析并更新图表
