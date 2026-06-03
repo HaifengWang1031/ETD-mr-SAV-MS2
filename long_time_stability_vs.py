@@ -39,6 +39,7 @@ def process_task(args):
         'tn': solver.tn,
         'tn_s': solver.tn_s,
         'Energy': solver.Energy,
+        'Energy_rate': solver.Energy_rate,
         'Enstrophy': solver.Enstrophy,
         "Palinstrophy": solver.Palinstrophy,
         "cpu_time": solver.cpu_time
@@ -119,6 +120,7 @@ if __name__ == '__main__':
             group["q"]     = result['q']
             group["tn"]    = result['tn']
             group["Energy"]    = result['Energy']
+            group["Energy_rate"] = result['Energy_rate']
             group["Enstrophy"] = result['Enstrophy']
             group["CPU_time"] = result['cpu_time']
             group["Palinstrophy"] = result['Palinstrophy']

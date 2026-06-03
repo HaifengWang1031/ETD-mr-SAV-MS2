@@ -19,7 +19,7 @@ def _optimal_fftw_threads(n: int) -> int:
     else:
         return 8
 
-class vs_mrSAV_Vorticity_Stream_Periodic_Solver():
+class vs_mrSAV_Vorticity_Stream_Periodic_Solve():
     """
     variable step mean reverting Vorticity-Streamfunction formulation Solver in periodic domain.
     """
@@ -158,6 +158,15 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solver():
 
     def enstrophy_rate(self, omega, t):
         return self.inner_product(self.vorticity_rhs(omega, t), omega)
+
+    def energy_rate(self, omega, t, enstrophy=None):
+        if enstrophy is None:
+            _, enstrophy, _ = self.vorticity_energy(omega)
+        psi = self.vorticity2stream(omega)
+        force = self.f(self.X[:-1, :-1], self.Y[:-1, :-1], t)
+        injection = self.inner_product(psi, force)
+        dissipation = -2 * self.nu * enstrophy
+        return dissipation + injection
 
     def inner_product(self,f,g):
         return self.h*np.sum(f*g)
@@ -439,19 +448,22 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solver():
 
     def init_record(self, M_max):
         self.Energy = np.empty(M_max + 1, dtype=np.float64)
+        self.Energy_rate = np.empty(M_max + 1, dtype=np.float64)
         self.Enstrophy = np.empty(M_max + 1, dtype=np.float64)
         self.Enstrophy_rate = np.empty(M_max + 1, dtype=np.float64)
         self.Palinstrophy =  np.empty(M_max + 1, dtype=np.float64)
         self.Mx = np.empty(M_max + 1, dtype=np.float64) 
         self.Energy[0], self.Enstrophy[0], self.Palinstrophy[0] = self.vorticity_energy(self.Omega0)
+        self.Energy_rate[0] = self.energy_rate(self.Omega0, getattr(self, "T0", 0.0), self.Enstrophy[0])
         self.Enstrophy_rate[0] = self.enstrophy_rate(self.Omega0, getattr(self, "T0", 0.0))
         self.Mx[0] = np.max(self.Omega0)
 
     def result_record(self,i,Omega,q):
         self.Energy[i+1], self.Enstrophy[i+1], self.Palinstrophy[i+1] = self.vorticity_energy(Omega)
+        self.Energy_rate[i+1] = self.energy_rate(Omega, self.tn[i+1], self.Enstrophy[i+1])
         self.Enstrophy_rate[i+1] = self.enstrophy_rate(Omega, self.tn[i+1])
         self.Mx[i+1] = np.max(Omega)
-        msg = f"Vorticity Energy:{self.Energy[i+1]:.4f}, Enstrophy:{self.Enstrophy[i+1]:.4f}, Enstrophy rate:{self.Enstrophy_rate[i+1]:.4e}, Palinstrophy:{self.Palinstrophy[i+1]:.4f}, Maximum:{self.Mx[i+1]:.2f}, |q-1|:{np.abs(q - 1):.4e}"
+        msg = f"Vorticity Energy:{self.Energy[i+1]:.4f}, Energy rate:{self.Energy_rate[i+1]:.4e}, Enstrophy:{self.Enstrophy[i+1]:.4f}, Enstrophy rate:{self.Enstrophy_rate[i+1]:.4e}, Palinstrophy:{self.Palinstrophy[i+1]:.4f}, Maximum:{self.Mx[i+1]:.2f}, |q-1|:{np.abs(q - 1):.4e}"
         return msg
     
     def extend_array(self):
@@ -507,6 +519,10 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solver():
         new_Energy = np.empty(new_M_max + 1, dtype=np.float64)
         new_Energy[:len(self.Energy)] = self.Energy
         self.Energy = new_Energy
+
+        new_Energy_rate = np.empty(new_M_max + 1, dtype=np.float64)
+        new_Energy_rate[:len(self.Energy_rate)] = self.Energy_rate
+        self.Energy_rate = new_Energy_rate
         
         new_Enstrophy = np.empty(new_M_max + 1, dtype=np.float64)
         new_Enstrophy[:len(self.Enstrophy)] = self.Enstrophy
@@ -743,6 +759,7 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solver():
         self.tn           = self.tn[:index]
         self.q            = self.q[:index]
         self.Energy       = self.Energy[:index]
+        self.Energy_rate  = self.Energy_rate[:index]
         self.Enstrophy    = self.Enstrophy[:index]
         self.Enstrophy_rate = self.Enstrophy_rate[:index]
         self.Palinstrophy = self.Palinstrophy[:index]
@@ -984,6 +1001,8 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solver():
             print(f"\r {self.tn[index]:.6f}\\{self.T}, tau = {self.tau[index-1]:.6f}, Elapse: {cpu_time:.3f} s, " + msg + " "*5, end="")
 
         print("")
+
+vs_mrSAV_Vorticity_Stream_Periodic_Solver = vs_mrSAV_Vorticity_Stream_Periodic_Solve
 
 if __name__ == "__main__":
     # 测试代码

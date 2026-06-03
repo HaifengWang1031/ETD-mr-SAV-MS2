@@ -35,8 +35,8 @@ ga = args.gamma
 re_tag = f"{Re:g}"
 eps_tag = f"{eps:g}"
 
+Primitive_force = lambda X, Y, t: ( -np.sin(m * Y), 0)
 force_term = lambda X, Y, t: m * np.cos(m * Y)
-
 
 def initial_streamfunction(x: np.ndarray, y: np.ndarray, nu: float, m: float, eps: float) -> np.ndarray:
     base_flow = (1.0 / (nu * m**3)) * np.cos(m * y)
@@ -132,7 +132,9 @@ with h5py.File(h5_path, "w") as f:
     f["tn"] = etdms_solver.tn
     f["Mx"] = etdms_solver.Mx
     f["Energy"] = etdms_solver.Energy
+    f["Energy_rate"] = etdms_solver.Energy_rate
     f["Enstrophy"] = etdms_solver.Enstrophy
+    f["Enstrophy_rate"] = etdms_solver.Enstrophy_rate
     f["Palinstrophy"] = etdms_solver.Palinstrophy
     f["CPU_time"] = etdms_solver.cpu_time
 

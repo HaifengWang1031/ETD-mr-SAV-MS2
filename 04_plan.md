@@ -181,9 +181,9 @@ pyfftw.config.NUM_THREADS = _optimal_fftw_threads(max(discrete_num))
 ```bash
 python 04_run_bursting.py --mode "fix" --tau 0.001
 python 04_run_bursting.py --mode "fix" --tau 0.0005
-python 04_run_bursting.py --mode "fix" --tau 0.001 --M "IMEX"
+python 04_run_bursting.py --mode "fix" --tau 0.001  --M "IMEX"
 python 04_run_bursting.py --mode "fix" --tau 0.0005 --M "IMEX"
-python 04_run_bursting.py --mode "fix" --tau 0.001 --M "ETD"
+python 04_run_bursting.py --mode "fix" --tau 0.001  --M "ETD"
 python 04_run_bursting.py --mode "fix" --tau 0.0005 --M "ETD"
 python 04_run_bursting.py --mode "fix" --tau 0.0001 --M "ETD"
 python 04_run_bursting.py --mode "fix" --tau 0.0001 --M "IMEX"
@@ -197,11 +197,11 @@ python 04_run_bursting.py --mode "adaptive"
 | --- | --- |
 | mrSAV fixed `tau = 0.001` | `data/ns_ETD_mrGSAV_MS2_b_bursting_40_4_3_0.001.h5` |
 | mrSAV fixed `tau = 0.0005` | `data/ns_ETD_mrGSAV_MS2_b_bursting_40_4_3_0.0005.h5` |
-| IMEX fixed `tau = 0.001` | `data/ns_IMEX_bursting_40_4_3_0.001.h5` |
-| IMEX fixed `tau = 0.0005` | `data/ns_IMEX_bursting_40_4_3_0.0005.h5` |
-| ETD fixed `tau = 0.001` | `data/ns_ETD_bursting_40_4_3_0.001.h5` |
-| ETD fixed `tau = 0.0005` | `data/ns_ETD_bursting_40_4_3_0.0005.h5` |
-| ETD fixed `tau = 0.0001` | `data/ns_ETD_bursting_40_4_3_0.0001.h5` |
+| IMEX fixed  `tau = 0.001` | `data/ns_IMEX_bursting_40_4_3_0.001.h5` |
+| IMEX fixed  `tau = 0.0005` | `data/ns_IMEX_bursting_40_4_3_0.0005.h5` |
+| ETD fixed   `tau = 0.001` | `data/ns_ETD_bursting_40_4_3_0.001.h5` |
+| ETD fixed   `tau = 0.0005` | `data/ns_ETD_bursting_40_4_3_0.0005.h5` |
+| ETD fixed   `tau = 0.0001` | `data/ns_ETD_bursting_40_4_3_0.0001.h5` |
 | IMEX fixed `tau = 0.0001` | `data/ns_IMEX_bursting_40_4_3_0.0001.h5` |
 | mrSAV fixed `tau = 0.0001` | `data/ns_ETD_mrGSAV_MS2_b_bursting_40_4_3_0.0001.h5` |
 | mrSAV adaptive | `data/ns_ETD_mrGSAV_MS2_b_bursting_40_4_3_vs.h5` |
