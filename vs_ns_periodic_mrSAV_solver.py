@@ -31,7 +31,8 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solve():
             discrete_num: Tuple[int,int],
             initial_condition: tnp.NDArray,
             force_term,
-            step_method: str):
+            step_method: str,
+            root_selection: str = "legacy"):
 
         pyfftw.config.NUM_THREADS = _optimal_fftw_threads(max(discrete_num))
 
@@ -46,8 +47,14 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solve():
 
         if step_method not in step_methods:
             raise ValueError(f"Not supported step method: {step_method}")
+        if root_selection not in {"legacy", "nearest", "farthest"}:
+            raise ValueError(
+                "root_selection must be 'legacy', 'nearest', or 'farthest'"
+            )
         
         self.step, self.setup_step = step_methods[step_method]
+        self.root_selection = root_selection
+        self.cubic_root_history = []
 
         # viscous coefficient
         self.nu = nu
@@ -307,6 +314,113 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solve():
         fomega_n4 = self.phi30*fomega_n  + tau*(self.phi31*N0 + 2*self.phi32*(N1 + N2) + self.phi33*N3)
         return self.ift(fomega_n4).real, 1
 
+    def _solve_mrgsav_cubic(self, alpha, beta, C, tn, tau_n):
+        coefficients = np.array(
+            [beta, -beta, 1.0 - alpha - beta, alpha + beta - C],
+            dtype=np.float64,
+        )
+        coefficient_scale = max(1.0, np.max(np.abs(coefficients)))
+        degree_tol = 100 * np.finfo(np.float64).eps * coefficient_scale
+
+        if abs(beta) <= degree_tol:
+            slope = 1.0 - alpha
+            if abs(slope) <= degree_tol:
+                raise RuntimeError("Degenerate mrGSAV scalar equation")
+            roots_all = np.array([(C - alpha) / slope], dtype=np.complex128)
+            real_root_count = 1
+            root_case = "linear"
+            discriminant = np.nan
+        else:
+            normalized = coefficients / coefficient_scale
+            a, b, c, d = normalized
+            discriminant = (
+                18 * a * b * c * d
+                - 4 * b**3 * d
+                + b**2 * c**2
+                - 4 * a * c**3
+                - 27 * a**2 * d**2
+            )
+            discriminant_tol = 1000 * np.finfo(np.float64).eps
+            if discriminant > discriminant_tol:
+                real_root_count = 3
+                root_case = "three_distinct_real"
+            elif discriminant < -discriminant_tol:
+                real_root_count = 1
+                root_case = "one_real"
+            else:
+                real_root_count = 3
+                root_case = "multiple_real"
+            roots_all = np.roots(normalized)
+
+        real_mask = np.abs(roots_all.imag) <= 1e-8 * (1.0 + np.abs(roots_all.real))
+        real_roots = np.sort(roots_all.real[real_mask])
+        if real_roots.size == 0:
+            raise RuntimeError("No numerically real root found for mrGSAV scalar equation")
+
+        distinct_real_roots = []
+        for root in real_roots:
+            if (
+                not distinct_real_roots
+                or abs(root - distinct_real_roots[-1])
+                > 1e-7 * (1.0 + abs(root))
+            ):
+                distinct_real_roots.append(root)
+
+        def scalar_equation(p):
+            return (
+                beta * p**3
+                - beta * p**2
+                + (1.0 - alpha - beta) * p
+                + alpha + beta - C
+            )
+
+        distances = np.abs(real_roots - C)
+        if self.root_selection == "nearest":
+            selected_root = real_roots[np.argmin(distances)]
+        else:
+            selected_root = real_roots[np.argmax(distances)]
+
+        residual_scale = max(
+            1.0,
+            abs(beta * selected_root**3),
+            abs(beta * selected_root**2),
+            abs((1.0 - alpha - beta) * selected_root),
+            abs(alpha + beta - C),
+        )
+        residual = abs(scalar_equation(selected_root))
+        if residual > 1e-9 * residual_scale:
+            raise RuntimeError(
+                f"Selected mrGSAV root has residual {residual:.3e}"
+            )
+
+        derivative = (
+            3.0 * beta * selected_root**2
+            - 2.0 * beta * selected_root
+            + 1.0 - alpha - beta
+        )
+        self.cubic_root_history.append(
+            {
+                "time": float(tn + tau_n),
+                "tau": float(tau_n),
+                "alpha": float(alpha),
+                "beta": float(beta),
+                "target": float(C),
+                "discriminant": float(discriminant),
+                "root_case": root_case,
+                "real_root_count": real_root_count,
+                "distinct_real_root_count": len(distinct_real_roots),
+                "roots_all": roots_all.copy(),
+                "real_roots": real_roots.copy(),
+                "selected_root": float(selected_root),
+                "selected_distance": float(abs(selected_root - C)),
+                "selected_derivative": float(derivative),
+                "selected_residual": float(residual),
+                "selected_q_positive": bool(selected_root > -1.0),
+                "selection": self.root_selection,
+            }
+        )
+        return selected_root
+
     def ETD_mrGSAV_MS2_b(self, Omega_s, q_s, tn, tau_s):
         tau_n = tau_s[-1]
         tau_nm = tau_s[-2]
@@ -342,14 +456,23 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solve():
         C =  self.phi0_ga*p_n
         
         Tgam = 0.1
-        f = lambda p: p + (1-p)*A*Tgam + (p**3 - p**2 - p + 1)*B*Tgam - C
-        try:
-            p_n1 = newton(f, 0.)
-        except RuntimeError:
-            lo, hi = -10., 10.
-            if f(lo) * f(hi) > 0:
-                lo, hi = -100., 100.
-            p_n1 = brentq(f, lo, hi)
+        if self.root_selection == "legacy":
+            f = lambda p: p + (1-p)*A*Tgam + (p**3 - p**2 - p + 1)*B*Tgam - C
+            try:
+                p_n1 = newton(f, 0.)
+            except RuntimeError:
+                lo, hi = -10., 10.
+                if f(lo) * f(hi) > 0:
+                    lo, hi = -100., 100.
+                p_n1 = brentq(f, lo, hi)
+        else:
+            p_n1 = self._solve_mrgsav_cubic(
+                Tgam * A,
+                Tgam * B,
+                C,
+                tn,
+                tau_n,
+            )
 
         fomega_n1 = self.phi0_L*fomega_n + tau_n*self.phi1_L*((1 - p_n1**2)*f_N12 + f_fn); fomega_n1[0,0] = 0.+0j
         return self.ift(fomega_n1).real, p_n1 + 1
@@ -786,6 +909,7 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solve():
             raise ValueError("时间步长 tau 必须大于 0")
 
         self.T0, self.T = t_span
+        self.cubic_root_history = []
         M_float = (self.T - self.T0) / tau
         M = int(np.ceil(M_float))
         if M <= 0:
