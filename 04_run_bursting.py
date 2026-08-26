@@ -10,8 +10,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--mode", type=str, choices=["fix", "adaptive"], default="fix",
                     help="solver mode: fix (fixed step) or adaptive (variable step)")
 parser.add_argument("--Re", type=float, default=40,              help="Reynolds number")
-parser.add_argument("--m", type=int, default=4,                  help="m parameter")
-parser.add_argument("--M", type=str, default="ETD_mrGSAV_MS2_b", help="solver method")
+parser.add_argument("--m",   type=int, default=4,                  help="m parameter")
+parser.add_argument("--M",   type=str, default="ETD_mrGSAV_MS2_b", help="solver method")
 parser.add_argument("--eps", type=float, default=3,              help="perturbation strength")
 parser.add_argument("--gamma", type=float, default=1000)
 
@@ -69,7 +69,7 @@ def initial_streamfunction(x: np.ndarray, y: np.ndarray, nu: float, m: float, ep
     return phi
 
 s_domain = (0, 0, 2 * np.pi, 2 * np.pi)
-discrete_num = [64, 64]
+discrete_num = [256, 256]
 xn = np.linspace(s_domain[0], s_domain[2], discrete_num[0] + 1)
 yn = np.linspace(s_domain[1], s_domain[3], discrete_num[1] + 1)
 X, Y = np.meshgrid(xn, yn)
