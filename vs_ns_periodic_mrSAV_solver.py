@@ -374,7 +374,7 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solve():
                 + alpha + beta - C
             )
 
-        distances = np.abs(real_roots - C)
+        distances = np.abs(real_roots)
         if self.root_selection == "nearest":
             selected_root = real_roots[np.argmin(distances)]
         else:
@@ -404,7 +404,8 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solve():
                 "tau": float(tau_n),
                 "alpha": float(alpha),
                 "beta": float(beta),
-                "target": float(C),
+                "target": 0.0,
+                "predictor": float(C),
                 "discriminant": float(discriminant),
                 "root_case": root_case,
                 "real_root_count": real_root_count,
@@ -412,7 +413,7 @@ class vs_mrSAV_Vorticity_Stream_Periodic_Solve():
                 "roots_all": roots_all.copy(),
                 "real_roots": real_roots.copy(),
                 "selected_root": float(selected_root),
-                "selected_distance": float(abs(selected_root - C)),
+                "selected_distance": float(abs(selected_root)),
                 "selected_derivative": float(derivative),
                 "selected_residual": float(residual),
                 "selected_q_positive": bool(selected_root > -1.0),

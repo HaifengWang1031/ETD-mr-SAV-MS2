@@ -98,6 +98,7 @@ def root_history_arrays(history: list[dict[str, object]]) -> dict[str, np.ndarra
         "alpha": np.array([item["alpha"] for item in history]),
         "beta": np.array([item["beta"] for item in history]),
         "target": np.array([item["target"] for item in history]),
+        "predictor": np.array([item["predictor"] for item in history]),
         "discriminant": np.array([item["discriminant"] for item in history]),
         "root_case": np.array([item["root_case"] for item in history]),
         "real_root_count": np.array(
@@ -325,7 +326,8 @@ def run_experiment(args: argparse.Namespace) -> dict[str, object]:
             "initialization_tau": args.init_tau,
             "experiment_time": args.final_time,
             "taus": args.taus,
-            "theoretical_root_target": "C = exp(-gamma*tau) * p_n",
+            "theoretical_root_target": "p = 0",
+            "continuation_predictor": "C = exp(-gamma*tau) * p_n",
         },
         "runs": {},
         "comparisons": {},
